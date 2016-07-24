@@ -3,6 +3,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -42,7 +43,6 @@ public class TankServer {
 				clients.add(new Client(IP, udpPort));
 				DataOutputStream dos = new DataOutputStream(s.getOutputStream());
 				dos.writeInt(ID++);
-				s.close();
 				System.out.println("A client is connected! Addr: " + s.getInetAddress() + ":" + 
 				                    s.getPort() + "----UDP Port:" + udpPort);
 			} catch (IOException e) {
@@ -87,6 +87,11 @@ public class TankServer {
 				DatagramPacket dp = new DatagramPacket(buf, buf.length);
 				try {
 					ds.receive(dp);
+					for(int i=0; i<clients.size(); i++) {
+						Client c = clients.get(i);
+						dp.setSocketAddress(new InetSocketAddress(c.IP, c.udpPort));
+						ds.send(dp);
+					}
 					System.out.println("a packet is received!");
 				} catch (IOException e) {
 					e.printStackTrace();

@@ -1,6 +1,13 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
+
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
+
 import java.util.ArrayList;
 
 public class TankClient extends Frame {
@@ -16,6 +23,7 @@ public class TankClient extends Frame {
 	
 	NetClient nc = new NetClient(this);
 	
+	ContDialog dialog = new ContDialog();
 	
 	public void paint(Graphics g) {
 		g.drawString("missiles count:" + missiles.size(), 10, 50);
@@ -24,11 +32,14 @@ public class TankClient extends Frame {
 		
 		for(int i=0; i<missiles.size(); i++) {
 			Missile m = missiles.get(i);
-			m.hitTanks(tanks);
-			m.hitTank(myTank);
+			//m.hitTanks(tanks);
+			if(m.hitTank(myTank)) {
+				TankDeadMsg msg = new TankDeadMsg(myTank.id);
+				nc.send(msg);
+				MissileDeadMsg mDMsg = new MissileDeadMsg(m.tankId, m.id);
+				nc.send(mDMsg);
+			}
 			m.draw(g);
-			//if(!m.isLive()) missiles.remove(m);
-			//else m.draw(g);
 		}
 		
 		for(int i=0; i<explodes.size(); i++) {
@@ -59,7 +70,7 @@ public class TankClient extends Frame {
 
 	public void lauchFrame() {
 		
-		//this.setLocation(400, 300);
+		this.setLocation(200, 200);
 		this.setSize(GAME_WIDTH, GAME_HEIGHT);
 		this.setTitle("TankWar");
 		this.addWindowListener(new WindowAdapter() {
@@ -76,7 +87,9 @@ public class TankClient extends Frame {
 		
 		new Thread(new PaintThread()).start();
 		
-		nc.connect("127.0.0.1", TankServer.TCP_PORT);
+		dialog.setVisible(true);
+		
+		//nc.connect("127.0.0.1", TankServer.TCP_PORT);
 	}
 
 	public static void main(String[] args) {
@@ -107,7 +120,40 @@ public class TankClient extends Frame {
 		public void keyPressed(KeyEvent e) {
 			myTank.keyPressed(e);
 		}
+	}
+	
+	class ContDialog extends JDialog {
+		JButton start = new JButton("Start !");
+		JTextField tfIP = new JTextField("127.0.0.1", 12); 
+		JTextField tfPort = new JTextField("" + TankServer.TCP_PORT, 4);
+		JTextField tfUDPPort = new JTextField("2223", 4);
 		
+		public ContDialog() {
+			super(TankClient.this, "Login", true);
+			setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
+			this.setLayout(new FlowLayout());
+			this.setLocation(300,300);
+			this.add(new JLabel("IP:"));
+			this.add(tfIP);
+			this.add(new JLabel("Port:"));
+			this.add(tfPort);
+			this.add(new JLabel("My UDP Port:"));
+			this.add(tfUDPPort);
+			this.add(start);
+			this.pack();
+			start.addActionListener(new ActionListener() {
+
+				public void actionPerformed(ActionEvent e) {
+					String IP = tfIP.getText().trim();
+					int port = Integer.parseInt(tfPort.getText());
+					int myUDPPort = Integer.parseInt(tfUDPPort.getText());
+					nc.setUdpPort(myUDPPort);
+					nc.connect(IP, port);
+					setVisible(false);
+				}
+				
+			});
+		}
 	}
 }
 

@@ -7,29 +7,29 @@ import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 
-public class TankNewMsg implements Msg {
-	int msgType = Msg.TANK_NEW_MSG;
-	Tank tank;
-	TankClient tc;
+public class MissileDeadMsg implements Msg {
 
-	public TankNewMsg(Tank tank) {
-		this.tank = tank;
-	}
+    int tankId;
+	int id;
+	TankClient tc;
+	int msgType = Msg.MISSILE_DEAD_MSG;
+
+	public MissileDeadMsg(int tankId, int id) {
+    	this.tankId = tankId;
+    	this.id = id;
+    }
 	
-	public TankNewMsg(TankClient tc) {
+	public MissileDeadMsg(TankClient tc) {
 		this.tc = tc;
 	}
-
+	
 	public void send(DatagramSocket ds, String IP, int udpPort) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(baos);
 		try {
 			dos.writeInt(msgType);
-			dos.writeInt(tank.id);
-			dos.writeInt(tank.x);
-			dos.writeInt(tank.y);
-			dos.writeInt(tank.dir.ordinal());
-			dos.writeBoolean(tank.isGood());
+			dos.writeInt(tankId);
+			dos.writeInt(id);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -44,39 +44,26 @@ public class TankNewMsg implements Msg {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}		
+		}
+
 	}
+
 
 	public void parse(DataInputStream dis) {
 		try {
+			int tankId = dis.readInt();
 			int id = dis.readInt();
-			if(tc.myTank.id == id) {
-				return;
-			}
-				
-			int x = dis.readInt();
-		    int y = dis.readInt();
-		    Dir dir = Dir.values()[dis.readInt()];
-		    boolean good = dis.readBoolean(); 
-		    boolean exist = false;
-		    for(int i=0; i<tc.tanks.size(); i++) {
-		    	Tank t = tc.tanks.get(i);
-		    	if(t.id == id) {
-		    		exist = true;
-		    		break;
+			
+		    for(int i=0; i<tc.missiles.size(); i++) {
+		    	Missile m = tc.missiles.get(i);
+		    	if(m.tankId == tankId && m.id == id) {
+		    		m.setLive(false);
+		    		//m.live = false;
 		    	}
 		    }
-		    if(!exist) {
-		    	TankNewMsg newMsg = new TankNewMsg(tc.myTank);
-				tc.nc.send(newMsg);
-		    	
-		    	Tank t = new Tank(x, y, good, dir, tc);
-		        t.id = id;
-		        tc.tanks.add(t);
-		    }
-		    
 		} catch (IOException e) {
 			e.printStackTrace();
-		}	
+		}
 	}
+
 }

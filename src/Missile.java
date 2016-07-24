@@ -8,23 +8,34 @@ public class Missile {
 	public static final int WIDTH = 10;
 	public static final int HEIGHT = 10;
 	
+	private static int ID = 1;
+	
 	int x, y;
 	Dir dir = Dir.R;
 	
 	private boolean good;
 	private boolean live = true;
+	//boolean live = true;
+
+	public void setLive(boolean live) {
+		this.live = live;
+	}
+
+	TankClient tc;
+	int tankId;
+	int id;
 	
-	private TankClient tc;
-	
-	public Missile(int x, int y, Dir dir) {
+	public Missile(int tankId, int x, int y, Dir dir) {
+		this.tankId = tankId;
 		this.x = x;
 		this.y = y;
 		this.dir = dir;
+		this.id = ID++;
 	}
 	
-	public Missile(int x, int y, boolean good, Dir dir, TankClient tc) {
-		this(x, y, dir);
-		this.good = good;
+	public Missile(int tankId, int x, int y, boolean good, Dir dir, TankClient tc) {
+		this(tankId, x, y, dir);
+		this.setGood(good);
 		this.tc = tc;
 	}
 	
@@ -92,9 +103,10 @@ public class Missile {
 	}
 	
 	public boolean hitTank(Tank t) {
-		if(this.live && this.getRect().intersects(t.getRect()) && t.isLive() && this.good != t.isGood()) {
+		if(this.live && this.getRect().intersects(t.getRect()) && t.isLive() && this.isGood() != t.isGood()) {
 			t.setLive(false);
 			this.live = false;
+			
 			Explode e = new Explode(x, y, tc);
 			tc.explodes.add(e);
 			return true;
@@ -109,6 +121,14 @@ public class Missile {
 			}
 		}
 		return false;
+	}
+
+	public boolean isGood() {
+		return good;
+	}
+
+	public void setGood(boolean good) {
+		this.good = good;
 	}
 	
 }
